@@ -152,7 +152,7 @@ public abstract class Logger {
 	///////////////////////////////////////////////////////////////////////////
 	// Debug
 	///////////////////////////////////////////////////////////////////////////
-	private static void debug(Object caller, String logTag, String message, Object... args){
+	protected final static void debug(Object caller, String logTag, String message, Object... args){
 		try{
 
 			message = new StringBuilder()
@@ -179,7 +179,7 @@ public abstract class Logger {
 	///////////////////////////////////////////////////////////////////////////
 	// Error
 	///////////////////////////////////////////////////////////////////////////
-	private static void error(Object caller, String logTag, String message, Object... args){
+	protected final static void error(Object caller, String logTag, String message, Object... args){
 		try{
 
 			message = new StringBuilder()
@@ -205,7 +205,7 @@ public abstract class Logger {
 	///////////////////////////////////////////////////////////////////////////
 	// Exception
 	///////////////////////////////////////////////////////////////////////////
-	private static void exception(Object caller, String message, Exception e) {
+	protected final static void exception(Object caller, String message, Exception e) {
 		try{
 			StackTraceElement[] list = new Exception().getStackTrace();
 			StackTraceElement l = list[2]; // 0 == EXCEPTION || 1 == EXP (INTERFACE) || 2 = METHOD
@@ -240,9 +240,9 @@ public abstract class Logger {
 	///////////////////////////////////////////////////////////////////////////
 	// Time
 	///////////////////////////////////////////////////////////////////////////
-	private static SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
+	private final static SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
 
-	private static String time() {
+	protected final static String time() {
 		if( LOG_TIME ) return dateFormat.format(new Date()) + " | ";
 		else return "";
 	}
@@ -252,9 +252,9 @@ public abstract class Logger {
 	// Get Log Caller Name
 	///////////////////////////////////////////////////////////////////////////
 
-	private static String name(Object caller) {
+	protected final static String name(Object caller) {
 		if( caller.getClass().getSimpleName().length() > MAX_SIZE_OBJECT_NAME){
-			return "#"+caller.getClass().getSimpleName().substring(0, MAX_SIZE_OBJECT_NAME);
+			return "["+caller.getClass().getSimpleName().substring(0, MAX_SIZE_OBJECT_NAME);
 		}
 		return "#"+caller.getClass().getSimpleName();
 	}
@@ -272,7 +272,7 @@ public abstract class Logger {
 		return tagify(loggerInterface.tag(object));
 	}
 
-	private static String tagify(String tag) {
+	protected static String tagify(String tag) {
 
 		StringBuilder stringBuilder = new StringBuilder();
 
