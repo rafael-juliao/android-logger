@@ -10,7 +10,7 @@ public class L extends Logger {
 
     static void start(){
         LOG_TIME = true;
-        Logger.setup("MyApp", new TagObjectInterface() {
+        Logger.setup("MyApp", new LoggerInterface() {
             @Override
             public String tag(Object object) {
                 return TAG(object);

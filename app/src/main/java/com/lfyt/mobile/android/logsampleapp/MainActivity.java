@@ -11,6 +11,8 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
+    MyAwesomeClass myAwesomeClass;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -22,14 +24,21 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                L.D(MainActivity.this, "Click in FAB");
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                        .setAction("Action", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                L.E(MainActivity.this, "Click in Action RANDOM ERROR");
+                            }
+                        }).show();
             }
         });
 
+        myAwesomeClass = new MyAwesomeClass();
 
         L.I(this, " Hey Just Created This Activity");
-        L.D(new MyAwesomeClass(), " Awesome Class onActivityCreated");
+        L.D(myAwesomeClass, " Awesome Class onActivityCreated");
     }
 
     @Override
@@ -42,11 +51,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        L.D(this, "Menu Item Selected -> %s", item);
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
+
+        L.E(this, "Error When Menu Item Selected");
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
@@ -60,16 +70,30 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        L.D(this, "Activity Started");
-        L.D(new MyAwesomeClass(), " Awesome Class onActivityStarted");
+        L.I(this, "Activity Started");
+        L.D(myAwesomeClass, "Awesome Class Handling onActivityStarted");
+
+        try{
+           int[] array = new int[1];
+           int a = array[2];
+        }catch (ArrayIndexOutOfBoundsException e){
+            L.EXP(this, e);
+        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        L.D(this, "Activity Stopped");
-        L.D(new MyAwesomeClass(), " Awesome Class onActivityStopped");
+        L.I(this, "Activity Stopped");
+        L.D(myAwesomeClass, "Awesome Class Handling onActivityStopped");
 
+        try{
+            String array = null;
+            int a = array.length();
+        }catch (NullPointerException e){
+            L.EXP(myAwesomeClass, e);
+        }
+        L.E(myAwesomeClass, "HAVE TO STOP DUE TO EXECPETION");
 
     }
 }

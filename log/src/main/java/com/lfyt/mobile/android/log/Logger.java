@@ -9,113 +9,99 @@ import timber.log.Timber;
 
 public abstract class Logger {
 
-
-	public Logger(){
-	}
-
-
+	protected Logger(){}
 
 	///////////////////////////////////////////////////////////////////////////
 	// Logger Configuration
 	///////////////////////////////////////////////////////////////////////////
 
+	//TAGS
+	private static String APP_TAG;
 
-	public interface TagObjectInterface{
+	public static int MAX_SIZE_OBJECT_NAME = 25;
+	public static int MAX_TAG_SIZE = 15;
+	public static boolean LOG_TIME = false;
+
+	private static LoggerInterface loggerInterface;
+
+	public interface LoggerInterface {
 		String tag(Object object);
 	}
 
 
-	public static int MAX_TAG_SIZE = 15;
-	public static boolean LOG_TIME = false;
 
-	private static TagObjectInterface tagObjectInterface;
+	///////////////////////////////////////////////////////////////////////////
+	// Logger Setup
+	///////////////////////////////////////////////////////////////////////////
 
-	public final static void setup(String baseAppTag, TagObjectInterface tagObjectInterface)
+	public final static void setup(String baseAppTag, LoggerInterface instance)
 	{
-		APP_TAG = " ~"+baseAppTag+"~ | ";
+		APP_TAG = " #"+baseAppTag+" | ";
 
-		Logger.tagObjectInterface = tagObjectInterface;
+		loggerInterface = instance;
 
 		Timber.plant( new Timber.DebugTree() );
 
 		Logger.SPACE();
-		Logger.I(Logger.class, "LOG CLASS INITIALIZED");
+		Logger.I(Logger.class, "LOGGER INITIALIZED");
 		Logger.SPACE();
 	}
 
 
-	//TAGS
-	private static String APP_TAG;
-
-	private final static String ERROR_TAG = " ~~> ERROR <~~ | ";
-
-	private final static String DEPENDENCY  = "[DEPENDENCY]  |  ";
 
 
 
-
+	///////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////
 	// Log Interface
 	///////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////
 
-	public static void SPACE() {
-		empty();
-	}
+
+	public static void SPACE() {Timber.d(APP_TAG); }
 
 
 
 
 	//Debug
 	public static void D(Object object, String message, Object... args){
-		LOG(Level.DEBUG, tagging(object), object, message, args);
-	}
-
-	private static String tagging(Object object) {
-
-		StringBuilder stringBuilder = new StringBuilder();
-
-		stringBuilder.append(tagObjectInterface.tag(object));
-
-		for(int i=0; i<MAX_TAG_SIZE; i++) stringBuilder.append(" ");
-
-		String tag = stringBuilder.toString().substring(0, MAX_TAG_SIZE) + " |";
-
-		return tag;
+		LOG(Level.DEBUG, objectTagify(object), object, message, args);
 	}
 
 	//Info
 	public static void I(Object object, String message, Object... args){
-		LOG(Level.INFO, tagging(object), object, message, args);
+		LOG(Level.INFO, objectTagify(object), object, message, args);
 	}
 
 	//Error
 	public static void E(Object object, String message, Object... args){
-		LOG(Level.ERROR, tagging(object), object, message, args);
+		LOG(Level.ERROR, objectTagify(object), object, message, args);
 	}
 
 
-
-
-	//Dependency Injection
-	public static void DI(Object caller){
-		debug(caller, DEPENDENCY, "~> CREATED <~");
-	}
-
-
-
-
-	//Log Exception
+	//Exception
 	public static void EXP(Object caller, String message, Exception e) {
 		exception(caller, message, e);
 	}
-
 	public static void EXP(Object caller, Exception e) {
 		exception(caller, "EMPTY", e);
 	}
 
 
+
+	//Dependency Injection
+	public static void DI(Object caller){
+		debug(caller, tagify("DEPENDENCY"), "~> CREATED <~");
+	}
+
+
+
+
+
 	///////////////////////////////////////////////////////////////////////////
-	// Log Functions
+	///////////////////////////////////////////////////////////////////////////
+	// Logging Method
+	///////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////
 
 	public enum Level{
@@ -123,7 +109,6 @@ public abstract class Logger {
 	}
 
 	private static void LOG(Level level, String TAG, Object caller, String message, Object... args){
-
 		switch (level){
 			case DEBUG:
 				debug(caller, TAG, message, args);
@@ -139,7 +124,7 @@ public abstract class Logger {
 
 
 	///////////////////////////////////////////////////////////////////////////
-	// Methods That Executed The Business
+	// Info
 	///////////////////////////////////////////////////////////////////////////
 
 	private static void info(Object caller, String logTag, String message, Object... args){
@@ -163,6 +148,10 @@ public abstract class Logger {
 		}
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////
+	// Debug
+	///////////////////////////////////////////////////////////////////////////
 	private static void debug(Object caller, String logTag, String message, Object... args){
 		try{
 
@@ -186,6 +175,10 @@ public abstract class Logger {
 		}
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////
+	// Error
+	///////////////////////////////////////////////////////////////////////////
 	private static void error(Object caller, String logTag, String message, Object... args){
 		try{
 
@@ -193,7 +186,6 @@ public abstract class Logger {
 					.append(APP_TAG)
 					.append(time())
 					.append(logTag)
-					.append(ERROR_TAG)
 					.append(caller==null?"":name(caller))
 					.append(" -> ")
 					.append(message)
@@ -209,15 +201,20 @@ public abstract class Logger {
 		}
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////
+	// Exception
+	///////////////////////////////////////////////////////////////////////////
 	private static void exception(Object caller, String message, Exception e) {
 		try{
-			StackTraceElement l = new Exception().getStackTrace()[0];
+			StackTraceElement[] list = new Exception().getStackTrace();
+			StackTraceElement l = list[2]; // 0 == EXCEPTION || 1 == EXP (INTERFACE) || 2 = METHOD
 
 			String aux = e.getClass().getSimpleName()
 					+ " --> "
 					+ l.getClassName()+"."+l.getMethodName()+":"+l.getLineNumber();
 
-			error(caller, " [EXCEPTION] ", aux );
+			error(caller, objectTagify(caller), aux );
 
 			e.printStackTrace();
 
@@ -230,11 +227,19 @@ public abstract class Logger {
 
 
 
+
+
 	///////////////////////////////////////////////////////////////////////////
-	// Utility Methods Methods
+	///////////////////////////////////////////////////////////////////////////
+	// Utility Methods
+	///////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////
 
 
+
+	///////////////////////////////////////////////////////////////////////////
+	// Time
+	///////////////////////////////////////////////////////////////////////////
 	private static SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss:SSS");
 
 	private static String time() {
@@ -242,17 +247,42 @@ public abstract class Logger {
 		else return "";
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////
+	// Get Log Caller Name
+	///////////////////////////////////////////////////////////////////////////
+
 	private static String name(Object caller) {
-		int MAX_SIZE = 25;
-		if( caller.getClass().getSimpleName().length() > MAX_SIZE){
-			return caller.getClass().getSimpleName().substring(0, MAX_SIZE);
+		if( caller.getClass().getSimpleName().length() > MAX_SIZE_OBJECT_NAME){
+			return "#"+caller.getClass().getSimpleName().substring(0, MAX_SIZE_OBJECT_NAME);
 		}
-		return caller.getClass().getSimpleName();
+		return "#"+caller.getClass().getSimpleName();
 	}
 
-	private static void empty(){
-		Timber.d(APP_TAG);
+
+
+
+
+
+	///////////////////////////////////////////////////////////////////////////
+	// Smart Tagging
+	///////////////////////////////////////////////////////////////////////////
+
+	private static String objectTagify(Object object){
+		return tagify(loggerInterface.tag(object));
 	}
 
+	private static String tagify(String tag) {
+
+		StringBuilder stringBuilder = new StringBuilder();
+
+		stringBuilder.append(tag);
+
+		for(int i=0; i<MAX_TAG_SIZE; i++) stringBuilder.append(" ");
+
+		String tagify = "#" + stringBuilder.toString().substring(0, MAX_TAG_SIZE) + " | ";
+
+		return tagify;
+	}
 
 }
